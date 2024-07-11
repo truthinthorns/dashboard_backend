@@ -1,15 +1,19 @@
 from beanie import Document
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 
 class Todo(Document):
     user_id: str
-    content: str
+    description: str
     title: str
-    date_created: datetime
+    date_created: datetime = datetime.now()
     finish_by: Optional[datetime] = None
+    status: Optional[str] = None
+    resolution: Optional[str] = None
+    tags: Optional[List[str]] = None
+    priority: Optional[int] = 0
 
 
     class Settings:
@@ -19,15 +23,18 @@ class Todo(Document):
         json_schema_extra = {
             "example": {
                 "user_id": "5eb7cf5a86d9755df3a6c593",
-                "content": "do x and y and z",
+                "description": "do x and y and z",
                 "title": "tasks",
-                "date_created": datetime.now(),
                 "finish_by": datetime.now()
             }
         }
 
 
 class UpdateTodo(BaseModel):
-    content: Optional[str] = ""
-    title: Optional[str] = ""
+    description: Optional[str] = None
+    title: Optional[str] = None
     finish_by: Optional[datetime] = None
+    status: Optional[str] = None
+    resolution: Optional[str] = None
+    tags: Optional[List[str]] = None
+    priority: Optional[int] = 0
