@@ -8,25 +8,12 @@ class RecoveryQuestions(BaseModel):
     answer: str
 
 
-class User(Document):
+class User(BaseModel):
     username: str
     email: str
     password: str
     recovery_questions: Optional[List[RecoveryQuestions]] = None
     creation_method: Optional[str] = None
-
-    class Settings:
-        name = "user_collection"
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "username": "username",
-                "email": "email@host.com",
-                "password": "password",
-                "creation_method": "swagger"
-            }
-        }
 
 
 class UpdateUser(BaseModel):
