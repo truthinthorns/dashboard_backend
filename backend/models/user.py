@@ -9,6 +9,7 @@ class RecoveryQuestions(BaseModel):
 
 
 class User(BaseModel):
+    uuid: str
     username: str
     email: str
     password: str

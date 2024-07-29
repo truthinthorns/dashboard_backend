@@ -1,27 +1,27 @@
 from models.user import User, UpdateUser
-from beanie import PydanticObjectId
 from fastapi import APIRouter, HTTPException
 
-from firebase_admin import db
-from uuid import uuid4
-from db_connector import default_app
+from db_connector import db
 
+import utils.util as util
 
-users_ref = db.reference('/users')
-
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 router = APIRouter(
     prefix="/users",
     tags=["users"],
 )
 
+users_ref = db.collection("users")
+
 
 @router.post('')
 async def add_user(user: User):
     try:
-        _uuid = str(uuid4())
-        temp_ref = users_ref.child(_uuid)
+        temp_ref = users_ref.document(str(user.uuid))
         temp_ref.set(user.model_dump())
+        _user = temp_ref.get()
+        return _user.to_dict()
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"An error occurred: {str(e)}")
 
@@ -29,7 +29,7 @@ async def add_user(user: User):
 @router.get('')
 async def get_all_users():
     try:
-        return users_ref.get()
+        return [user.to_dict() for user in users_ref.stream()]
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"An error occurred: {str(e)}")
 
@@ -37,12 +37,11 @@ async def get_all_users():
 @router.get('/{id}')
 async def get_user(_uuid: str):
     try:
-        temp_ref = users_ref.child(_uuid)
-        user = temp_ref.get()
-        if user == None:
+        user_ref = users_ref.document(_uuid)
+        user = user_ref.get()
+        if not user.exists:
             raise HTTPException(status_code=404, detail="No user found with that id!")
-        print(user)
-        return user
+        return user.to_dict()
     except Exception as e:
         raise e
 
@@ -50,9 +49,9 @@ async def get_user(_uuid: str):
 @router.put('/{id}')
 async def update_user(_uuid: str, updates: UpdateUser):
     try:
-        temp_ref = users_ref.child(_uuid)
+        temp_ref = users_ref.document(_uuid)
         user = temp_ref.get()
-        if user == None:
+        if not user.exists:
             raise HTTPException(status_code=404, detail="No user found with that id!")
         updates_dict = updates.model_dump()
         update = {k: v for k, v in updates_dict.items() if v is not None}
@@ -61,8 +60,10 @@ async def update_user(_uuid: str, updates: UpdateUser):
     except Exception as e:
         raise e
     try:
-        updated_user = temp_ref.update(update)
-        return updated_user
+        temp_ref.update(update)
+        user_ref = users_ref.document(_uuid)
+        user = user_ref.get()
+        return user.to_dict()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unable to update user: {str(e)}")
 
@@ -70,10 +71,27 @@ async def update_user(_uuid: str, updates: UpdateUser):
 @router.delete('/{id}')
 async def delete_user(_uuid: str):
     try:
-        temp_ref = users_ref.child(_uuid)
+        temp_ref = users_ref.document(_uuid)
         user = temp_ref.get()
-        if user == None:
+        if not user.exists:
             raise HTTPException(status_code=404, detail="No user found with that id!")
         return temp_ref.delete()
+    except Exception as e:
+        raise e
+
+
+@router.post("/login")
+async def login(email: str, password: str):
+    try:
+        query_list = [user.to_dict() for user in users_ref.where(filter=FieldFilter("email", "==", email)).stream()]
+        if len(query_list) != 1:
+            raise HTTPException(status_code=500,detail="More than one user found with that email")
+        else:
+            user = query_list[0]
+            if util.check_password(password, user['password']):
+                print('matches!')
+            else:
+                raise HTTPException(status_code=403, detail="invalid email/password")
+            return query_list[0]
     except Exception as e:
         raise e

@@ -13,8 +13,10 @@
 #     await init_beanie(database=client.db_name, document_models=[User, Todo])
 
 import firebase_admin
+from firebase_admin import firestore
 
 cred_obj = firebase_admin.credentials.Certificate('../firebase_credentials.json')
 
 if not firebase_admin._apps:
-    default_app = firebase_admin.initialize_app(cred_obj,{'databaseURL': 'https://mywebsite-bd62b-default-rtdb.firebaseio.com/'})
+    firebase_admin.initialize_app(cred_obj)
+    db = firestore.client()
