@@ -2,7 +2,6 @@ from models.user import User, UpdateUser
 from fastapi import APIRouter, HTTPException
 
 from db_connector import db
-
 import utils.util as util
 
 from google.cloud.firestore_v1.base_query import FieldFilter
@@ -13,6 +12,8 @@ router = APIRouter(
 )
 
 users_ref = db.collection("users")
+
+
 
 
 @router.post('')
