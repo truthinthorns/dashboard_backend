@@ -1,7 +1,7 @@
 import requests
 from fastapi.encoders import jsonable_encoder
 from fastapi import APIRouter, HTTPException
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 
 
 router = APIRouter(
@@ -19,7 +19,7 @@ def hourly_forecast_formatter(coords: str):
         raise HTTPException(status_code=400, detail=f"An error occurred when getting the hourly forecast: {str(e)}")
     
     try:
-        # 39.77,-84.0823
+        # 39.668941,-84.106102
         new_hourly = []
         for hour in hourly_json:
             new_hourly.append({
@@ -27,10 +27,10 @@ def hourly_forecast_formatter(coords: str):
                 "icon": hour['icon'],
                 "windSpeed": hour['windSpeed'],
                 "windDirection": hour['windDirection'],
-                "chanceOfRain": f"{day['probabilityOfPrecipitation']['value'] if day['probabilityOfPrecipitation']['value'] else 0}%",
-                "humidity": f"{day['relativeHumidity']['value']}%"
+                "chanceOfRain": f"{hour['probabilityOfPrecipitation']['value'] if hour['probabilityOfPrecipitation']['value'] else 0}%",
+                "humidity": f"{hour['relativeHumidity']['value']}%"
             })
-        return hourly_json
+        return new_hourly
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"An error occurred when formatting the hourly forecast: {str(e)}")
     
@@ -61,7 +61,7 @@ def weekly_forecast_formatter(coords: str):
                 })
             # it's today's date, and it's before 6pm, and the forecast is for 6pm and later
             elif temp_dt.day == today.day:
-                if datetime.now().hour < 18 and temp_dt.hour >= 18:
+                if temp_dt.hour >= 18 and day['name'] == 'Tonight':
                     new_weekly.append({
                         "name": day['name'],
                         "temperature": f"{day['temperature']}° F",
