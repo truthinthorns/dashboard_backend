@@ -1,8 +1,9 @@
-from models.user import User, UpdateUser
+from backend.models.user import User, UpdateUser
 from beanie import PydanticObjectId
-from fastapi import APIRouter, HTTPException, Path
+from fastapi import APIRouter, HTTPException, Path, Depends
 from typing import List
-
+from backend.util.util import get_user
+from backend.util.password_util import get_password_hash, authenticate_user
 
 router = APIRouter(
     prefix="/users",
@@ -26,6 +27,7 @@ UserNotFound = {
 )
 async def add_user(user: User):
     try:
+        user.password = get_password_hash(user.password)
         new_user = await user.create()
         return new_user
     except Exception as e:
@@ -33,7 +35,7 @@ async def add_user(user: User):
 
 
 @router.get(
-    path="",
+    path="/all",
     summary="Get all Users",
     description="This endpoint will return a list of all Users. This should not be used except for testing!",
     response_model=List[User],
@@ -46,6 +48,21 @@ async def get_all_users():
         raise HTTPException(status_code=400, detail=f"An error occurred: {str(e)}")
 
 
+@router.delete(
+    path="/all",
+    summary="Delete all User",
+    description="This endpoint will DELETE ALL Users. This should not be used except for testing!",
+    response_model=dict,
+    status_code=200,
+)
+async def delete_all_users():
+    try:
+        await User.find_all().delete()
+        return {"message": "Deleted ALL Users"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"An error occurred: {str(e)}")
+
+
 @router.get(
     path="/{id}",
     summary="Get User by id",
@@ -54,14 +71,11 @@ async def get_all_users():
     status_code=200,
     responses={404: UserNotFound},
 )
-async def get_user(id: PydanticObjectId = Path(example=str(PydanticObjectId()))):
-    try:
-        user = await User.get(id)
-        if user == None:
-            raise HTTPException(status_code=404, detail="No user found with that id!")
-        return user
-    except Exception as e:
-        raise e
+async def get_user(
+    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
+    user: User = Depends(get_user),
+):
+    return user
 
 
 @router.put(
@@ -73,12 +87,11 @@ async def get_user(id: PydanticObjectId = Path(example=str(PydanticObjectId())))
     responses={404: UserNotFound},
 )
 async def update_user(
-    updates: UpdateUser, id: PydanticObjectId = Path(example=str(PydanticObjectId()))
+    updates: UpdateUser,
+    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
+    user: User = Depends(get_user),
 ):
     try:
-        user = await User.get(id)
-        if user == None:
-            raise HTTPException(status_code=404, detail="No user found with that id!")
         updates_dict = dict(updates)
         update = {k: v for k, v in updates_dict.items() if v is not None}
         if update == {}:
@@ -103,11 +116,11 @@ async def update_user(
     status_code=200,
     responses={404: UserNotFound},
 )
-async def delete_user(id: PydanticObjectId = Path(example=str(PydanticObjectId()))):
+async def delete_user(
+    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
+    user: User = Depends(get_user),
+):
     try:
-        user = await User.get(id)
-        if user == None:
-            raise HTTPException(status_code=404, detail="No user found with that id!")
         await user.delete()
         return {"message": "User deleted!"}
     except Exception as e:

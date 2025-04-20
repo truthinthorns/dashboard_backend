@@ -1,23 +1,65 @@
-from beanie import Document, PydanticObjectId
+from beanie import Document
 from pydantic import BaseModel, Field, EmailStr
 from typing import Optional, List
 
 
 class RecoveryQuestions(BaseModel):
-    question: str = Field(default="What color is the sky?", min_length=10, max_length=128)
-    answer: str = Field(default="blue", min_length=1, max_length=128, description="This is case sensitive!")
+    question: str = Field(
+        default="What color is the sky?",
+        description="The question the User picked",
+        min_length=10,
+        max_length=128,
+    )
+    answer: str = Field(
+        default="blue",
+        description="The HASHED answer the User entered for the question. Should NOT be the user's raw input!",
+        min_length=1,
+        max_length=128,
+    )
 
 
 class User(Document):
-    username: str = Field(default="username", description="This is case sensitive!", min_length=6, max_length=32, pattern="^[A-Za-z0-9_]+$")
-    email: EmailStr = Field(default="test@example.com", description="This is case sensitive!")
-    password: str
-    recovery_questions: Optional[List[RecoveryQuestions]] = None
-    creation_method: Optional[str] = None
+    username: str = Field(
+        default="username",
+        description="The username for the User. This is case sensitive!",
+        min_length=6,
+        max_length=32,
+        pattern="^[A-Za-z0-9_]+$",
+    )
+    email: EmailStr = Field(
+        default="test@example.com",
+        description="The email for the User. This is case sensitive!",
+    )
+    password: str = Field(
+        default="password",
+        description="The HASHED password for the User. Should NOT be the user's raw input!",
+    )
+    recovery_questions: Optional[List[RecoveryQuestions]] = Field(
+        default=[{"question": "What color is the sky?", "answer": "Blue"}],
+        description="A list of recovery questions the User can use to recover their info.",
+    )
+    creation_method: Optional[str] = Field(
+        default="IDK", description="The method used to create this User."
+    )
 
 
 class UpdateUser(BaseModel):
-    username: Optional[str] = None
-    email: Optional[str] = None
-    password: Optional[str] = None
-    recovery_questions: Optional[List[RecoveryQuestions]] = None
+    username: str = Field(
+        default="username",
+        description="The username for the User. This is case sensitive!",
+        min_length=6,
+        max_length=32,
+        pattern="^[A-Za-z0-9_]+$",
+    )
+    email: EmailStr = Field(
+        default="test@example.com",
+        description="The email for the User. This is case sensitive!",
+    )
+    password: str = Field(
+        default="password",
+        description="The HASHED password for the User. Should NOT be the user's raw input!",
+    )
+    recovery_questions: Optional[List[RecoveryQuestions]] = Field(
+        default=[{"question": "What color is the sky?", "answer": "Blue"}],
+        description="A list of recovery questions the User can use to recover their info.",
+    )

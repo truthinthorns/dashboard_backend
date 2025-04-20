@@ -1,8 +1,8 @@
 from beanie import init_beanie
 import motor.motor_asyncio
 
-from models.user import User
-from models.todo import Todo
+from backend.models.user import User
+from backend.models.todo import Todo
 
 
 async def init_db():

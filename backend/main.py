@@ -1,24 +1,25 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers.user_router import router as user_router
-from routers.weather_router import router as weather_router
-from routers.todo_router import router as todo_router
-from db_connector import init_db
+from backend.routers.user_router import router as user_router
+from backend.routers.weather_router import router as weather_router
+from backend.routers.todo_router import router as todo_router
+from backend.db_connector import init_db
+
+import uvicorn
 
 from contextlib import asynccontextmanager
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
     yield
 
+
 app = FastAPI(lifespan=lifespan)
 
 
-origins = [
-    "http://localhost:5173",
-    "*"
-]
+origins = ["http://localhost:5173", "*"]
 
 app.include_router(user_router)
 app.include_router(weather_router)
@@ -31,3 +32,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def start():
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=5000, reload=True)
