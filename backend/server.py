@@ -3,8 +3,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers.user_router import router as user_router
 from routers.weather_router import router as weather_router
 from routers.todo_router import router as todo_router
+from db_connector import init_db
 
-app = FastAPI()
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 
 origins = [
