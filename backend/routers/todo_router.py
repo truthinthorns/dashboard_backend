@@ -1,13 +1,15 @@
 from backend.models.todo import Todo, UpdateTodo
+from backend.models.user import User
 from beanie import PydanticObjectId
 from fastapi import APIRouter, HTTPException, Path, Depends
-from typing import List
+from typing import List, Annotated
 from backend.util.util import get_todo
+from backend.util.auth_util import get_current_user
 
 
 router = APIRouter(
     prefix="/todos",
-    tags=["todos"],
+    tags=["Todos"],
 )
 
 TodoNotFound = {
@@ -27,7 +29,7 @@ TodoNotFound = {
     response_model=Todo,
     status_code=200,
 )
-async def add_todo(todo: Todo):
+async def add_todo(todo: Todo, _: Annotated[User, Depends(get_current_user)]):
     try:
         new_todo = await todo.create()
         return new_todo
@@ -37,12 +39,12 @@ async def add_todo(todo: Todo):
 
 @router.get(
     path="/all",
-    summary="Get all Todo",
+    summary="Get all Todos",
     description="This endpoint will return a list of all Todos. This should not be used except for testing!",
     response_model=List[Todo],
     status_code=200,
 )
-async def get_all_todos():
+async def get_all_todos(_: Annotated[User, Depends(get_current_user)]):
     try:
         todos = await Todo.find_all().to_list()
         return todos
@@ -52,12 +54,12 @@ async def get_all_todos():
 
 @router.delete(
     path="/all",
-    summary="Delete all Todo",
+    summary="Delete all Todos",
     description="This endpoint will DELETE ALL Todos. This should not be used except for testing!",
     response_model=dict,
     status_code=200,
 )
-async def delete_all_todos():
+async def delete_all_todos(_: Annotated[User, Depends(get_current_user)]):
     try:
         await Todo.find_all().delete()
         return {"message": "Deleted ALL Todos"}
@@ -74,6 +76,7 @@ async def delete_all_todos():
     responses={404: TodoNotFound},
 )
 async def get_todo(
+    _: Annotated[User, Depends(get_current_user)],
     id: PydanticObjectId = Path(example=str(PydanticObjectId())),
     todo: Todo = Depends(get_todo),
 ):
@@ -90,6 +93,7 @@ async def get_todo(
 )
 async def update_todo(
     updates: UpdateTodo,
+    _: Annotated[User, Depends(get_current_user)],
     id: PydanticObjectId = Path(example=str(PydanticObjectId())),
     todo: Todo = Depends(get_todo),
 ):
@@ -119,6 +123,7 @@ async def update_todo(
     responses={404: TodoNotFound},
 )
 async def delete_todo(
+    _: Annotated[User, Depends(get_current_user)],
     id: PydanticObjectId = Path(example=str(PydanticObjectId())),
     todo: Todo = Depends(get_todo),
 ):

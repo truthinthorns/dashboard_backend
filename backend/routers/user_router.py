@@ -1,13 +1,13 @@
 from backend.models.user import User, UpdateUser
 from beanie import PydanticObjectId
 from fastapi import APIRouter, HTTPException, Path, Depends
-from typing import List
+from typing import Annotated, List
 from backend.util.util import get_user
-from backend.util.password_util import get_password_hash, authenticate_user
+from backend.util.auth_util import get_password_hash, get_current_user
 
 router = APIRouter(
     prefix="/users",
-    tags=["users"],
+    tags=["Users"],
 )
 
 UserNotFound = {
@@ -25,7 +25,7 @@ UserNotFound = {
     response_model=User,
     status_code=200,
 )
-async def add_user(user: User):
+async def add_user(user: User, _: Annotated[User, Depends(get_current_user)]):
     try:
         user.password = get_password_hash(user.password)
         new_user = await user.create()
@@ -41,7 +41,7 @@ async def add_user(user: User):
     response_model=List[User],
     status_code=200,
 )
-async def get_all_users():
+async def get_all_users(_: Annotated[User, Depends(get_current_user)]):
     try:
         return await User.find_all().to_list()
     except Exception as e:
@@ -50,12 +50,12 @@ async def get_all_users():
 
 @router.delete(
     path="/all",
-    summary="Delete all User",
+    summary="Delete all Users",
     description="This endpoint will DELETE ALL Users. This should not be used except for testing!",
     response_model=dict,
     status_code=200,
 )
-async def delete_all_users():
+async def delete_all_users(_: Annotated[User, Depends(get_current_user)]):
     try:
         await User.find_all().delete()
         return {"message": "Deleted ALL Users"}
@@ -72,6 +72,7 @@ async def delete_all_users():
     responses={404: UserNotFound},
 )
 async def get_user(
+    _: Annotated[User, Depends(get_current_user)],
     id: PydanticObjectId = Path(example=str(PydanticObjectId())),
     user: User = Depends(get_user),
 ):
@@ -88,6 +89,7 @@ async def get_user(
 )
 async def update_user(
     updates: UpdateUser,
+    _: Annotated[User, Depends(get_current_user)],
     id: PydanticObjectId = Path(example=str(PydanticObjectId())),
     user: User = Depends(get_user),
 ):
@@ -117,6 +119,7 @@ async def update_user(
     responses={404: UserNotFound},
 )
 async def delete_user(
+    _: Annotated[User, Depends(get_current_user)],
     id: PydanticObjectId = Path(example=str(PydanticObjectId())),
     user: User = Depends(get_user),
 ):
