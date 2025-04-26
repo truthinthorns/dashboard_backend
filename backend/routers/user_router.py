@@ -1,79 +1,130 @@
-from models.user import User, UpdateUser
+from backend.models.user import User, UpdateUser
 from beanie import PydanticObjectId
-from fastapi import APIRouter, HTTPException
-
-from firebase_admin import db
-from uuid import uuid4
-from db_connector import default_app
-
-
-users_ref = db.reference('/users')
-
+from fastapi import APIRouter, HTTPException, Path, Depends
+from typing import Annotated, List
+from backend.util.util import get_user
+from backend.util.auth_util import get_password_hash, get_current_user
 
 router = APIRouter(
     prefix="/users",
-    tags=["users"],
+    tags=["Users"],
 )
 
+UserNotFound = {
+    "description": "User not found",
+    "content": {
+        "application/json": {"example": {"detail": "No user found with that id!"}}
+    },
+}
 
-@router.post('')
-async def add_user(user: User):
+
+@router.post(
+    path="",
+    summary="Create a new User",
+    description="This endpoint will create a new User using the info that is passed in and then return it.",
+    response_model=User,
+    status_code=200,
+)
+async def add_user(user: User, _: Annotated[User, Depends(get_current_user)]):
     try:
-        _uuid = str(uuid4())
-        temp_ref = users_ref.child(_uuid)
-        temp_ref.set(user.model_dump())
+        user.password = get_password_hash(user.password)
+        new_user = await user.create()
+        return new_user
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"An error occurred: {str(e)}")
 
 
-@router.get('')
-async def get_all_users():
+@router.get(
+    path="/all",
+    summary="Get all Users",
+    description="This endpoint will return a list of all Users. This should not be used except for testing!",
+    response_model=List[User],
+    status_code=200,
+)
+async def get_all_users(_: Annotated[User, Depends(get_current_user)]):
     try:
-        return users_ref.get()
+        return await User.find_all().to_list()
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"An error occurred: {str(e)}")
 
 
-@router.get('/{id}')
-async def get_user(_uuid: str):
+@router.delete(
+    path="/all",
+    summary="Delete all Users",
+    description="This endpoint will DELETE ALL Users. This should not be used except for testing!",
+    response_model=dict,
+    status_code=200,
+)
+async def delete_all_users(_: Annotated[User, Depends(get_current_user)]):
     try:
-        temp_ref = users_ref.child(_uuid)
-        user = temp_ref.get()
-        if user == None:
-            raise HTTPException(status_code=404, detail="No user found with that id!")
-        print(user)
-        return user
+        await User.find_all().delete()
+        return {"message": "Deleted ALL Users"}
     except Exception as e:
-        raise e
+        raise HTTPException(status_code=400, detail=f"An error occurred: {str(e)}")
 
 
-@router.put('/{id}')
-async def update_user(_uuid: str, updates: UpdateUser):
+@router.get(
+    path="/{id}",
+    summary="Get User by id",
+    description="This endpoint will return the User dictionary, if found, based on the passed in id",
+    response_model=User,
+    status_code=200,
+    responses={404: UserNotFound},
+)
+async def get_user(
+    _: Annotated[User, Depends(get_current_user)],
+    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
+    user: User = Depends(get_user),
+):
+    return user
+
+
+@router.put(
+    path="/{id}",
+    summary="Update User by id",
+    description="This endpoint will try to find a User with the passed in id, then update and return the updated dictionary.",
+    response_model=User,
+    status_code=200,
+    responses={404: UserNotFound},
+)
+async def update_user(
+    updates: UpdateUser,
+    _: Annotated[User, Depends(get_current_user)],
+    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
+    user: User = Depends(get_user),
+):
     try:
-        temp_ref = users_ref.child(_uuid)
-        user = temp_ref.get()
-        if user == None:
-            raise HTTPException(status_code=404, detail="No user found with that id!")
-        updates_dict = updates.model_dump()
+        updates_dict = dict(updates)
         update = {k: v for k, v in updates_dict.items() if v is not None}
         if update == {}:
-            raise HTTPException(status_code=400, detail="Empty update request. Likely incorrect field names.")
+            raise HTTPException(
+                status_code=400,
+                detail="Empty update request. Likely incorrect field names.",
+            )
     except Exception as e:
         raise e
     try:
-        updated_user = temp_ref.update(update)
+        updated_user = await user.update({"$set": update})
         return updated_user
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unable to update user: {str(e)}")
 
 
-@router.delete('/{id}')
-async def delete_user(_uuid: str):
+@router.delete(
+    path="/{id}",
+    summary="Delete User by id",
+    description="This endpoint will delete the User, if found, based on the id",
+    response_model=dict,
+    status_code=200,
+    responses={404: UserNotFound},
+)
+async def delete_user(
+    _: Annotated[User, Depends(get_current_user)],
+    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
+    user: User = Depends(get_user),
+):
     try:
-        temp_ref = users_ref.child(_uuid)
-        user = temp_ref.get()
-        if user == None:
-            raise HTTPException(status_code=404, detail="No user found with that id!")
-        return temp_ref.delete()
+        await user.delete()
+        return {"message": "User deleted!"}
     except Exception as e:
         raise e

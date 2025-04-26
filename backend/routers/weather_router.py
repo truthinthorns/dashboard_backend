@@ -1,42 +1,29 @@
-import requests
-from fastapi.encoders import jsonable_encoder
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
+from backend.models.weather import Weather
+from typing import List
+from backend.util.util import hourly_forecast_formatter
 
 
 router = APIRouter(
     prefix="/weather",
-    tags=["weather"],
+    tags=["Weather"],
 )
 
 
-def get_forecast_links(hourly: bool, coords: str):
+@router.get(
+    path="/hourly",
+    summary="Get hourly forecast",
+    description="This endpoint returns the hourly forecast for the coordinates provided.",
+    response_model=List[Weather],
+    status_code=200,
+)
+async def get_hourly_forecast(
+    coords: str = Query(
+        example="40.7128,-74.006",
+        description="The coordinates with no spaces and N first, followed by W. You might need to include - before the second point if west of the Prime Meridian!",
+    )
+):
     try:
-        result = requests.get(f'https://api.weather.gov/points/{coords}').json()
-        if hourly:
-            return result["properties"]["forecastHourly"]
-        else:
-            return result["properties"]["forecast"]
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"An error occurred: {str(e)}")
-    
-
-@router.get('/hourly')
-async def get_hourly_forecast(coords: str):
-    try:
-        link = get_forecast_links(True, coords)
-        result = requests.get(link).json()
-        new_result = jsonable_encoder(result['properties']['periods'])
-        return new_result
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"An error occurred: {str(e)}")
-
-
-@router.get('/weekly')
-async def get_weekly_forecast(coords: str):
-    try:
-        link = get_forecast_links(False, coords)
-        result = requests.get(link).json()
-        new_result = jsonable_encoder(result['properties']['periods'])
-        return new_result
+        return hourly_forecast_formatter(coords.replace(" ", ""))
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"An error occurred: {str(e)}")

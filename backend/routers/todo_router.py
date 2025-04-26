@@ -1,18 +1,35 @@
-from models.todo import Todo, UpdateTodo
+from backend.models.todo import Todo, UpdateTodo
+from backend.models.user import User
 from beanie import PydanticObjectId
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Path, Depends
+from typing import List, Annotated
+from backend.util.util import get_todo
+from backend.util.auth_util import get_current_user
 
 
 router = APIRouter(
     prefix="/todos",
-    tags=["todos"],
+    tags=["Todos"],
 )
+
+TodoNotFound = {
+    "description": "Todo not found",
+    "content": {
+        "application/json": {"example": {"detail": "No todo found with that id!"}}
+    },
+}
 
 # todo: add code to relate the users and todos
 
 
-@router.post('')
-async def add_todo(todo: Todo):
+@router.post(
+    path="",
+    summary="Create a new Todo",
+    description="This endpoint will create a new Todo using the info that is passed in and then return it.",
+    response_model=Todo,
+    status_code=200,
+)
+async def add_todo(todo: Todo, _: Annotated[User, Depends(get_current_user)]):
     try:
         new_todo = await todo.create()
         return new_todo
@@ -20,8 +37,14 @@ async def add_todo(todo: Todo):
         raise HTTPException(status_code=400, detail=f"An error occurred: {str(e)}")
 
 
-@router.get('')
-async def get_all_todos():
+@router.get(
+    path="/all",
+    summary="Get all Todos",
+    description="This endpoint will return a list of all Todos. This should not be used except for testing!",
+    response_model=List[Todo],
+    status_code=200,
+)
+async def get_all_todos(_: Annotated[User, Depends(get_current_user)]):
     try:
         todos = await Todo.find_all().to_list()
         return todos
@@ -29,27 +52,59 @@ async def get_all_todos():
         raise HTTPException(status_code=400, detail=f"An error occurred: {str(e)}")
 
 
-@router.get('/{id}')
-async def get_todo(id: PydanticObjectId):
+@router.delete(
+    path="/all",
+    summary="Delete all Todos",
+    description="This endpoint will DELETE ALL Todos. This should not be used except for testing!",
+    response_model=dict,
+    status_code=200,
+)
+async def delete_all_todos(_: Annotated[User, Depends(get_current_user)]):
     try:
-        todo = await Todo.get(id)
-        if todo == None:
-            raise HTTPException(status_code=404, detail="No todo found with that id!")
-        return todo
+        await Todo.find_all().delete()
+        return {"message": "Deleted ALL Todos"}
     except Exception as e:
-        raise e
+        raise HTTPException(status_code=400, detail=f"An error occurred: {str(e)}")
 
 
-@router.put('/{id}')
-async def update_todo(id: PydanticObjectId, updates: UpdateTodo):
+@router.get(
+    path="/{id}",
+    summary="Get Todo by id",
+    description="This endpoint will return the Todo dictionary, if found, based on the passed in id",
+    response_model=Todo,
+    status_code=200,
+    responses={404: TodoNotFound},
+)
+async def get_todo(
+    _: Annotated[User, Depends(get_current_user)],
+    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
+    todo: Todo = Depends(get_todo),
+):
+    return todo
+
+
+@router.put(
+    path="/{id}",
+    summary="Update Todo by id",
+    description="This endpoint will try to find a Todo with the passed in id, then update and return the updated dictionary.",
+    response_model=Todo,
+    status_code=200,
+    responses={404: TodoNotFound},
+)
+async def update_todo(
+    updates: UpdateTodo,
+    _: Annotated[User, Depends(get_current_user)],
+    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
+    todo: Todo = Depends(get_todo),
+):
     try:
-        todo = await Todo.get(id)
-        if todo == None:
-            raise HTTPException(status_code=404, detail="No todo found with that id!")
         updates_dict = dict(updates)
         update = {k: v for k, v in updates_dict.items() if v is not None}
         if update == {}:
-            raise HTTPException(status_code=400, detail="Empty update request. Likely incorrect field names.")
+            raise HTTPException(
+                status_code=400,
+                detail="Empty update request. Likely incorrect field names.",
+            )
     except Exception as e:
         raise e
     try:
@@ -59,12 +114,20 @@ async def update_todo(id: PydanticObjectId, updates: UpdateTodo):
         raise HTTPException(status_code=500, detail=f"Unable to update todo: {str(e)}")
 
 
-@router.delete('/{id}')
-async def delete_todo(id: PydanticObjectId):
+@router.delete(
+    path="/{id}",
+    summary="Delete Todo by id",
+    description="This endpoint will delete the Todo, if found, based on the id",
+    response_model=dict,
+    status_code=200,
+    responses={404: TodoNotFound},
+)
+async def delete_todo(
+    _: Annotated[User, Depends(get_current_user)],
+    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
+    todo: Todo = Depends(get_todo),
+):
     try:
-        todo = await Todo.get(id)
-        if todo == None:
-            raise HTTPException(status_code=404, detail="No todo found with that id!")
         await todo.delete()
         return {"message": "Todo deleted!"}
     except Exception as e:
