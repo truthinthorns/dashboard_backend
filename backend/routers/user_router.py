@@ -25,7 +25,7 @@ UserNotFound = {
     response_model=User,
     status_code=200,
 )
-async def add_user(user: User, _: Annotated[User, Depends(get_current_user)]):
+async def add_user(user: User):
     try:
         user.password = get_password_hash(user.password)
         new_user = await user.create()
@@ -73,7 +73,6 @@ async def delete_all_users(_: Annotated[User, Depends(get_current_user)]):
 )
 async def get_user(
     _: Annotated[User, Depends(get_current_user)],
-    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
     user: User = Depends(get_user),
 ):
     return user
@@ -90,7 +89,6 @@ async def get_user(
 async def update_user(
     updates: UpdateUser,
     _: Annotated[User, Depends(get_current_user)],
-    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
     user: User = Depends(get_user),
 ):
     try:
@@ -120,7 +118,6 @@ async def update_user(
 )
 async def delete_user(
     _: Annotated[User, Depends(get_current_user)],
-    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
     user: User = Depends(get_user),
 ):
     try:

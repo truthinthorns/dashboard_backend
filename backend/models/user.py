@@ -1,6 +1,6 @@
-from beanie import Document
+from beanie import Document, Indexed
 from pydantic import BaseModel, Field, EmailStr
-from typing import Optional, List
+from typing import Optional, List, Annotated
 
 
 class RecoveryQuestions(BaseModel):
@@ -19,14 +19,14 @@ class RecoveryQuestions(BaseModel):
 
 
 class User(Document):
-    username: str = Field(
+    username: Annotated[str, Indexed(unique=True)] = Field(
         default="username",
         description="The username for the User. This is case sensitive!",
         min_length=6,
         max_length=32,
         pattern="^[A-Za-z0-9_]+$",
     )
-    email: EmailStr = Field(
+    email: Annotated[EmailStr, Indexed(unique=True)] = Field(
         default="test@example.com",
         description="The email for the User. This is case sensitive!",
     )
@@ -41,7 +41,7 @@ class User(Document):
     creation_method: Optional[str] = Field(
         default="IDK", description="The method used to create this User."
     )
-
+    
 
 class UpdateUser(BaseModel):
     username: str = Field(

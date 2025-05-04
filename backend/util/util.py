@@ -22,6 +22,7 @@ def hourly_forecast_formatter(coords: str):
     try:
         # 39.668941,-84.106102
         new_hourly = []
+        # return only the next 48 hours
         for hour in hourly_json:
             hourly_dict = dict(hour)
             # for some reason, dewpoint is in Celsius, so convert to Fahrenheit

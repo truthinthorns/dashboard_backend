@@ -77,7 +77,6 @@ async def delete_all_todos(_: Annotated[User, Depends(get_current_user)]):
 )
 async def get_todo(
     _: Annotated[User, Depends(get_current_user)],
-    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
     todo: Todo = Depends(get_todo),
 ):
     return todo
@@ -94,7 +93,6 @@ async def get_todo(
 async def update_todo(
     updates: UpdateTodo,
     _: Annotated[User, Depends(get_current_user)],
-    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
     todo: Todo = Depends(get_todo),
 ):
     try:
@@ -124,7 +122,6 @@ async def update_todo(
 )
 async def delete_todo(
     _: Annotated[User, Depends(get_current_user)],
-    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
     todo: Todo = Depends(get_todo),
 ):
     try:

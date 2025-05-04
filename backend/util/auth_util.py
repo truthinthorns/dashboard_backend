@@ -2,9 +2,8 @@ from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
 import jwt
 from fastapi.security import OAuth2PasswordBearer
-from typing import Annotated, Union
-from fastapi import Depends, HTTPException, status
-from jwt.exceptions import InvalidTokenError
+from typing import Union
+from fastapi import HTTPException, status, Request
 from backend.models.user import User
 
 
@@ -29,22 +28,27 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     return encoded_jwt
 
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+async def get_current_user(request: Request):
+    print(request.cookies)
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
         if username is None:
-            raise credentials_exception
-    except InvalidTokenError:
-        raise credentials_exception
-    user = await get_user(username=username)
+            raise HTTPException(status_code=401, detail="Invalid token payload")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = await get_user(username)
     if user is None:
-        raise credentials_exception
+        raise HTTPException(status_code=401, detail="User not found")
+
     return user
 
 
