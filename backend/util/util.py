@@ -2,7 +2,7 @@ import requests
 from fastapi.encoders import jsonable_encoder
 from fastapi import HTTPException
 from backend.models.weather import Weather
-from backend.models.user import User
+from backend.models.user import MongoUser as User
 from backend.models.todo import Todo
 from datetime import datetime
 from beanie import PydanticObjectId

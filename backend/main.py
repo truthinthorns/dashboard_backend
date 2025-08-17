@@ -41,7 +41,7 @@ app.add_middleware(
 
 
 @app.post("/login")
-async def login_for_access_token(
+async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     response: Response
 ) -> dict:
@@ -67,7 +67,7 @@ async def login_for_access_token(
         path="/"
     )
 
-    return {"message": "Login successful"}
+    return {"message": "Login successful", "user": user}
 
 
 @app.post("/logout")

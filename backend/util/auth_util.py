@@ -4,7 +4,7 @@ import jwt
 from fastapi.security import OAuth2PasswordBearer
 from typing import Union
 from fastapi import HTTPException, status, Request
-from backend.models.user import User
+from backend.models.user import MongoUser as User
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
