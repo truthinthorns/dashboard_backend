@@ -1,4 +1,4 @@
-from backend.models.user import User, UpdateUser
+from backend.models.user import CreateUser, MongoUser, UpdateUser
 from beanie import PydanticObjectId
 from fastapi import APIRouter, HTTPException, Path, Depends
 from typing import Annotated, List
@@ -22,13 +22,14 @@ UserNotFound = {
     path="",
     summary="Create a new User",
     description="This endpoint will create a new User using the info that is passed in and then return it.",
-    response_model=User,
+    response_model=MongoUser,
     status_code=200,
 )
-async def add_user(user: User, _: Annotated[User, Depends(get_current_user)]):
+async def add_user(user: CreateUser):
     try:
         user.password = get_password_hash(user.password)
-        new_user = await user.create()
+        mongo_user = MongoUser(**user.model_dump())
+        new_user = await mongo_user.create()
         return new_user
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"An error occurred: {str(e)}")
@@ -38,12 +39,12 @@ async def add_user(user: User, _: Annotated[User, Depends(get_current_user)]):
     path="/all",
     summary="Get all Users",
     description="This endpoint will return a list of all Users. This should not be used except for testing!",
-    response_model=List[User],
+    response_model=List[MongoUser],
     status_code=200,
 )
-async def get_all_users(_: Annotated[User, Depends(get_current_user)]):
+async def get_all_users(_: Annotated[MongoUser, Depends(get_current_user)]):
     try:
-        return await User.find_all().to_list()
+        return await MongoUser.find_all().to_list()
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"An error occurred: {str(e)}")
 
@@ -55,9 +56,9 @@ async def get_all_users(_: Annotated[User, Depends(get_current_user)]):
     response_model=dict,
     status_code=200,
 )
-async def delete_all_users(_: Annotated[User, Depends(get_current_user)]):
+async def delete_all_users(_: Annotated[MongoUser, Depends(get_current_user)]):
     try:
-        await User.find_all().delete()
+        await MongoUser.find_all().delete()
         return {"message": "Deleted ALL Users"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"An error occurred: {str(e)}")
@@ -67,14 +68,13 @@ async def delete_all_users(_: Annotated[User, Depends(get_current_user)]):
     path="/{id}",
     summary="Get User by id",
     description="This endpoint will return the User dictionary, if found, based on the passed in id",
-    response_model=User,
+    response_model=MongoUser,
     status_code=200,
     responses={404: UserNotFound},
 )
 async def get_user(
-    _: Annotated[User, Depends(get_current_user)],
-    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
-    user: User = Depends(get_user),
+    _: Annotated[MongoUser, Depends(get_current_user)],
+    user: MongoUser = Depends(get_user),
 ):
     return user
 
@@ -83,15 +83,14 @@ async def get_user(
     path="/{id}",
     summary="Update User by id",
     description="This endpoint will try to find a User with the passed in id, then update and return the updated dictionary.",
-    response_model=User,
+    response_model=MongoUser,
     status_code=200,
     responses={404: UserNotFound},
 )
 async def update_user(
     updates: UpdateUser,
-    _: Annotated[User, Depends(get_current_user)],
-    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
-    user: User = Depends(get_user),
+    _: Annotated[MongoUser, Depends(get_current_user)],
+    user: MongoUser = Depends(get_user),
 ):
     try:
         updates_dict = dict(updates)
@@ -119,9 +118,8 @@ async def update_user(
     responses={404: UserNotFound},
 )
 async def delete_user(
-    _: Annotated[User, Depends(get_current_user)],
-    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
-    user: User = Depends(get_user),
+    _: Annotated[MongoUser, Depends(get_current_user)],
+    user: MongoUser = Depends(get_user),
 ):
     try:
         await user.delete()

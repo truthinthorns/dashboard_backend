@@ -1,5 +1,5 @@
 from backend.models.todo import Todo, UpdateTodo
-from backend.models.user import User
+from backend.models.user import MongoUser as User
 from beanie import PydanticObjectId
 from fastapi import APIRouter, HTTPException, Path, Depends
 from typing import List, Annotated
@@ -8,8 +8,8 @@ from backend.util.auth_util import get_current_user
 
 
 router = APIRouter(
-    prefix="/todos",
-    tags=["Todos"],
+    prefix="/todo",
+    tags=["Todo"],
 )
 
 TodoNotFound = {
@@ -77,7 +77,6 @@ async def delete_all_todos(_: Annotated[User, Depends(get_current_user)]):
 )
 async def get_todo(
     _: Annotated[User, Depends(get_current_user)],
-    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
     todo: Todo = Depends(get_todo),
 ):
     return todo
@@ -94,7 +93,6 @@ async def get_todo(
 async def update_todo(
     updates: UpdateTodo,
     _: Annotated[User, Depends(get_current_user)],
-    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
     todo: Todo = Depends(get_todo),
 ):
     try:
@@ -124,7 +122,6 @@ async def update_todo(
 )
 async def delete_todo(
     _: Annotated[User, Depends(get_current_user)],
-    id: PydanticObjectId = Path(example=str(PydanticObjectId())),
     todo: Todo = Depends(get_todo),
 ):
     try:

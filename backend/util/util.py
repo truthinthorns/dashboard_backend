@@ -2,7 +2,7 @@ import requests
 from fastapi.encoders import jsonable_encoder
 from fastapi import HTTPException
 from backend.models.weather import Weather
-from backend.models.user import User
+from backend.models.user import MongoUser as User
 from backend.models.todo import Todo
 from datetime import datetime
 from beanie import PydanticObjectId
@@ -22,6 +22,7 @@ def hourly_forecast_formatter(coords: str):
     try:
         # 39.668941,-84.106102
         new_hourly = []
+        # return only the next 48 hours
         for hour in hourly_json:
             hourly_dict = dict(hour)
             # for some reason, dewpoint is in Celsius, so convert to Fahrenheit
