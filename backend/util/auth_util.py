@@ -29,7 +29,6 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
 
 
 async def get_current_user(request: Request):
-    print(request.cookies)
     token = request.cookies.get("access_token")
     if not token:
         raise HTTPException(

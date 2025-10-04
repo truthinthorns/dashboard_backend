@@ -1,4 +1,4 @@
-from beanie import Document, Indexed
+from beanie import Document, Indexed, PydanticObjectId
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import Optional, List, Annotated
 
@@ -20,6 +20,7 @@ class RecoveryQuestions(BaseModel):
 
 # Common fields for creation
 class BaseUser(BaseModel):
+    id: PydanticObjectId = Field(default=None)
     username: Annotated[str, Indexed(unique=True)] = Field(
         description="The username for the User. This is case sensitive!",
         min_length=6,
