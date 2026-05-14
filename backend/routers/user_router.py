@@ -1,7 +1,6 @@
 from backend.models.user import CreateUser, MongoUser, UpdateUser
-from beanie import PydanticObjectId
-from fastapi import APIRouter, HTTPException, Path, Depends
-from typing import Annotated, List
+from fastapi import APIRouter, HTTPException, Depends
+from typing import Annotated
 from backend.util.util import get_user
 from backend.util.auth_util import get_password_hash, get_current_user
 
@@ -39,7 +38,7 @@ async def add_user(user: CreateUser):
     path="/all",
     summary="Get all Users",
     description="This endpoint will return a list of all Users. This should not be used except for testing!",
-    response_model=List[MongoUser],
+    response_model=list[MongoUser],
     status_code=200,
 )
 async def get_all_users(_: Annotated[MongoUser, Depends(get_current_user)]):

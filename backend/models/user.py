@@ -1,6 +1,6 @@
-from beanie import Document, Indexed, PydanticObjectId
-from pydantic import BaseModel, Field, EmailStr, ConfigDict
-from typing import Optional, List, Annotated
+from beanie import Document, Indexed, PydanticObjectId, Indexed
+from pydantic import BaseModel, Field, EmailStr, ConfigDict, ConfigDict
+from typing import Optional, List, Annotated, Annotated
 
 
 class RecoveryQuestions(BaseModel):

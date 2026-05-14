@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
 from backend.models.weather import Weather
-from typing import List
 from backend.util.util import hourly_forecast_formatter
 
 
@@ -14,7 +13,7 @@ router = APIRouter(
     path="/hourly",
     summary="Get hourly forecast",
     description="This endpoint returns the hourly forecast for the coordinates provided.",
-    response_model=List[Weather],
+    response_model=list[Weather],
     status_code=200,
 )
 async def get_hourly_forecast(

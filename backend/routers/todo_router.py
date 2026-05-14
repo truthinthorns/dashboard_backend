@@ -1,8 +1,7 @@
 from backend.models.todo import Todo, UpdateTodo
 from backend.models.user import MongoUser as User
-from beanie import PydanticObjectId
-from fastapi import APIRouter, HTTPException, Path, Depends, Request
-from typing import List, Annotated
+from fastapi import APIRouter, HTTPException, Depends
+from typing import Annotated
 from backend.util.util import get_todo
 from backend.util.auth_util import get_current_user
 
@@ -41,7 +40,7 @@ async def add_todo(todo: Todo, _: Annotated[User, Depends(get_current_user)]):
     path="/all",
     summary="Get all Todos",
     description="This endpoint will return a list of all Todos for the current User.",
-    response_model=List[Todo],
+    response_model=list[Todo],
     status_code=200,
 )
 async def get_all_todos(user: Annotated[User, Depends(get_current_user)]):

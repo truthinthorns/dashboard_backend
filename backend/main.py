@@ -1,9 +1,10 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import auth_router, todo_router, user_router, weather_router
-from backend.db_connector import init_db
 import uvicorn
 from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from backend.db_connector import init_db
+from backend.routers import auth_router, todo_router, user_router, weather_router
 
 
 @asynccontextmanager
@@ -19,7 +20,8 @@ app.include_router(user_router.router)
 app.include_router(todo_router.router)
 app.include_router(weather_router.router)
 
-origins = ["https://9000-firebase-dashboard2-1751145094776.cluster-f4iwdviaqvc2ct6pgytzw4xqy4.cloudworkstations.dev"]#,""http://localhost:5173", "https://5173-firebase-dashboard2-1751145094776.cluster-f4iwdviaqvc2ct6pgytzw4xqy4.cloudworkstations.dev/", "https://9000-firebase-dashboard2-1751145094776.cluster-f4iwdviaqvc2ct6pgytzw4xqy4.cloudworkstations.dev/", "*"]
+
+origins = ["http://localhost:5173", "http://localhost:8080"]
 
 app.add_middleware(
     CORSMiddleware,
